@@ -1,0 +1,6 @@
+streamlit==1.2.0  # As of my last update; you might want to check for the latest version
+pandas==1.3.3
+seaborn==0.11.2
+matplotlib==3.4.3
+numpy==1.21.2
+xlsxwriter==1.4.4
