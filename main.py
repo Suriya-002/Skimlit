@@ -1,4 +1,3 @@
-# imports
 import streamlit as st
 import pandas as pd
 import seaborn as sns
@@ -6,7 +5,6 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
 
-# Ensure the theme is dark
 st.set_page_config(layout="wide")
 
 st.title("Skimlit 🌌")
@@ -14,24 +12,20 @@ st.title("Skimlit 🌌")
 st.write("""
 ### Welcome to Skimlit!
 
-Harness the power of AI and data visualization in just a few clicks. Skimlit is designed to turn raw CSV data into insightful visualizations while also cleaning up any inconsistencies.
+Harness the power of AI and data visualization in just a few clicks. Skimlit turns raw CSV data into insightful visualizations and cleans any inconsistencies.
 
-🔍 **Explore** - Dive deep into your data's hidden patterns.
-✨ **Transform** - Let Skimlit work its magic on your raw datasets.
-📊 **Visualize** - Watch as your data comes to life in vivid charts.
-
----
+🔍 **Explore** - Dive deep into hidden patterns.
+✨ **Transform** - Let Skimlit enhance your datasets.
+📊 **Visualize** - Bring your data to life in vivid charts.
 
 #### 🚀 How to Use Skimlit:
 
-1. **Upload Your CSV**: Use the uploader below to provide your dataset.
-2. **Wait for Magic**: Skimlit will preprocess your data, handling missing values and more.
-3. **Enjoy the Visuals**: Scroll down to discover histograms, bar charts, pie charts, and more insightful representations of your data columns.
-4. **Download**: Want your cleaned data? Hit the 'Download cleaned data' button at the end.
+1. **Upload Your CSV**: Use the uploader below.
+2. **Wait for Magic**: Skimlit processes and visualizes your data.
+3. **Download**: Get your cleaned data with the 'Download' button.
 
-Ready to embark on your data journey? Let's get started!
+Ready? Let's start!
 """)
-
 
 uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 
@@ -42,65 +36,59 @@ def to_excel(df):
     processed_data = output.getvalue()
     return processed_data
 
-def get_table_download_link(df, filename='data.xlsx', text='Download cleaned data'):
+def get_table_download_link(df):
     val = to_excel(df)
-    b64 = base64.b64encode(val)
-    button_html = f'<a href="data:application/octet-stream;base64,{b64.decode()}" download="{filename}" style="display:inline-block;background-color:#f63366;color:white;padding:8px 16px;border-radius:4px;text-decoration:none">{text}</a>'
-    return button_html
+    b64 = base64.b64encode(val).decode()
+    return f'<a href="data:application/octet-stream;base64,{b64}" download="cleaned_data.xlsx" style="background-color:#f63366;color:white;padding:8px 16px;border-radius:4px;text-decoration:none">Download cleaned data</a>'
 
 if uploaded_file:
     data = pd.read_csv(uploaded_file)
-
-    # Show the original data
     st.write("Original Data")
     st.write(data)
 
-    # Data Preprocessing
-    numeric_cols = data.select_dtypes(include=['float64', 'int64']).columns
-    data[numeric_cols] = data[numeric_cols].fillna(data[numeric_cols].mean())
-    non_numeric_cols = data.select_dtypes(exclude=['float64', 'int64']).columns
-    for col in non_numeric_cols:
-        mode_val = data[col].mode()[0]
-        data[col] = data[col].fillna(mode_val)
+    if data.isnull().sum().sum() > 0:
+        numeric_cols = data.select_dtypes(include=['float64', 'int64']).columns
+        for col in numeric_cols:
+            if data[col].isnull().sum() > 0:
+                data[col].fillna(data[col].mean(), inplace=True)
+        non_numeric_cols = data.select_dtypes(exclude=['float64', 'int64']).columns
+        for col in non_numeric_cols:
+            if data[col].isnull().sum() > 0:
+                mode_val = data[col].mode()[0]
+                data[col].fillna(mode_val, inplace=True)
 
-    # Visualization
     st.write("Feature Distributions and Insights")
     for column in data.columns:
-        # Numeric columns
-        if data[column].dtype in ['float64', 'int64']:
-            # Histogram
-            fig, ax = plt.subplots()
-            sns.histplot(data[column], ax=ax)
-            ax.set_title(f'Histogram for {column}', fontsize=15)
-            st.pyplot(fig)
-            # Box Plot
-            fig, ax = plt.subplots()
-            sns.boxplot(data[column], ax=ax)
-            ax.set_title(f'Box Plot for {column}', fontsize=15)
-            st.pyplot(fig)
-        # Categorical columns
-        else:
-            if data[column].nunique() <= 10:
+        try:
+            if data[column].dtype in ['float64', 'int64']:
                 fig, ax = plt.subplots()
-                data[column].value_counts().plot.pie(autopct='%1.1f%%', startangle=90, ax=ax, legend=True, fontsize=10)
-                ax.set_title(f'Pie Chart for {column}', fontsize=15)
+                sns.histplot(data[column], ax=ax)
+                ax.set_title(f'Histogram for {column}')
                 st.pyplot(fig)
-            else:
-                fig, ax = plt.subplots()
-                data[column].value_counts().plot.bar(ax=ax, legend=True, fontsize=10)
-                ax.set_title(f'Bar Chart for {column}', fontsize=15)
-                st.pyplot(fig)
-    # Correlation heatmap for numeric columns
-    corr = data[numeric_cols].corr()
-    fig, ax = plt.subplots(figsize=(10,8))
-    sns.heatmap(corr, annot=True, fmt=".2f", cmap="coolwarm", ax=ax)
-    ax.set_title('Correlation Heatmap', fontsize=15)
-    st.pyplot(fig)
 
-    # Download link for cleaned data in Excel format styled as a button
+                fig, ax = plt.subplots()
+                sns.boxplot(data[column], ax=ax)
+                ax.set_title(f'Box Plot for {column}')
+                st.pyplot(fig)
+
+            else:
+                if data[column].nunique() <= 10:
+                    fig, ax = plt.subplots()
+                    data[column].value_counts().plot.pie(autopct='%1.1f%%', startangle=90, ax=ax)
+                    ax.set_title(f'Pie Chart for {column}')
+                    st.pyplot(fig)
+                else:
+                    fig, ax = plt.subplots()
+                    data[column].value_counts().plot.bar(ax=ax)
+                    ax.set_title(f'Bar Chart for {column}')
+                    st.pyplot(fig)
+
+        except Exception as e:
+            st.write(f"An error occurred when trying to plot {column}. Error: {e}")
+
+
     st.markdown(get_table_download_link(data), unsafe_allow_html=True)
 
-# Footer
 footer = """
 <style>
 .footer {
