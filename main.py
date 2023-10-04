@@ -5,7 +5,12 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
 
-st.set_page_config(layout="wide")
+st.set_page_config(
+    page_title="SkimLit",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 st.title("Skimlit 🌌")
 
@@ -46,6 +51,7 @@ if uploaded_file:
     st.write("Original Data")
     st.write(data)
 
+    # Handle missing data
     if data.isnull().sum().sum() > 0:
         numeric_cols = data.select_dtypes(include=['float64', 'int64']).columns
         for col in numeric_cols:
@@ -62,12 +68,14 @@ if uploaded_file:
         try:
             if data[column].dtype in ['float64', 'int64']:
                 fig, ax = plt.subplots()
-                sns.histplot(data[column], ax=ax)
+                data[column].hist(ax=ax)
                 ax.set_title(f'Histogram for {column}')
+                ax.set_xlabel(column)
+                ax.set_ylabel('Frequency')
                 st.pyplot(fig)
 
                 fig, ax = plt.subplots()
-                sns.boxplot(data[column], ax=ax)
+                sns.boxplot(y=data[column], ax=ax)
                 ax.set_title(f'Box Plot for {column}')
                 st.pyplot(fig)
 
@@ -85,7 +93,6 @@ if uploaded_file:
 
         except Exception as e:
             st.write(f"An error occurred when trying to plot {column}. Error: {e}")
-
 
     st.markdown(get_table_download_link(data), unsafe_allow_html=True)
 
