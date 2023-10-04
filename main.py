@@ -7,7 +7,7 @@ import base64
 
 st.set_page_config(
     page_title="SkimLit",
-    page_icon="📊",
+    page_icon="data.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
